@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <title>Dropbox Debug</title>
+</head>
+
+<body>
+<br>
+<div class="container">
+    <div class="row"><div class="col-md-12">
+        <div>
+            <img src="https://cfl.dropboxstatic.com/static/images/logo_catalog/dropbox_logo_glyph_m1.svg" width="3%"/>
+            <img src="https://cfl.dropboxstatic.com/static/images/logo_catalog/wordmark--dropbox_m1.svg" width="9%"/>
+        </div>
+        <br>
+        <h1 class="display-4">Debug page</h1>
+        <br/>
+        <p>Please copy and paste the following text into your support ticket to help us debug your connection:</p>
+        <a class="btn btn-primary" data-toggle="collapse" href="#collapseDebug" role="button" aria-expanded="false" aria-controls="collapseDebug">
+        Show debug information
+        </a>
+        <div class="collapse" id="collapseDebug">
+            <br/>
+            <div class="card card-body bg-light" id="b64-well"></div>
+        </div>
+    </div>
+</div>
+
+<br/>
+<hr/>
+    <div class="row">
+        <div class="col-md-8">
+            <div>
+                <h5 class="card-title">Browser info</h5>
+                <p id="browser_info-body"><img width="30" height="30" src="https://www.osu.edu/O-H-I-O/images/spinner.gif"/></p>
+            </div>
+            <div>
+                <h5 class="card-title">Plugins</h5>
+                <p id="plugins-body"><img width="30" height="30" src="https://www.osu.edu/O-H-I-O/images/spinner.gif"/></p>
+            </div>
+            <hr/>
+            <div class="row">
+                <div class="col-md-6">
+                    <div>
+                        <h5 class="card-title">Geolocation</h5>
+                        <p id="geolocation-body"><img width="30" height="30" src="https://www.osu.edu/O-H-I-O/images/spinner.gif"/></p>
+                    </div>
+                </div>
+                 <div class="col-md-6">
+                    <div>
+                        <h5 class="card-title">Response Headers</h5>
+                        <p id="headers-body"><img width="30" height="30" src="https://www.osu.edu/O-H-I-O/images/spinner.gif"/></p>
+                    </div>
+                </div>
+            </div>
+            <hr/>
+            <div>
+                <h5 class="card-title" >DNS Test</h5>
+                <h6 class="card-title" >A query result (IPv4):</h6>
+                <p id="dns-a-test"><img width="30" height="30" src="https://www.osu.edu/O-H-I-O/images/spinner.gif"/></p>
+                <h6 class="card-title" >AAAA query result (IPv6):</h6>
+                <p id="dns-aaaa-test" bg-light><img width="30" height="30" src="https://www.osu.edu/O-H-I-O/images/spinner.gif"/></p>
+            </div>
+            <hr/>
+        </div>
+        <div class="col-md-4">
+            <div id="pop" style="display: none">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Current Pop</h5>
+                        <p class="card-text" id="pop-body"></p>
+                    </div>
+                </div>
+                <br/>
+            </div>
+
+            <div id="speed-test" style="display: none">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Performance</h5>
+                        <p class="card-text" id="speed-body"></p>
+                        <p class="card-text" id="rtt"></p>
+                    </div>
+                </div>
+                <br/>
+            </div>
+            <div id="latency" style="display: none">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">POP latency</h5>
+                         <p id="performance-body"><img width="30" height="30" src="https://www.osu.edu/O-H-I-O/images/spinner.gif"/></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="main.js"></script>
+</body>
+</html>
