@@ -1,6 +1,7 @@
 const uploadSize = 4 * 1024 * 1024;
 const uploadSpeedCheckUrl = "https://sea.dropbox-debug.com/upload_test"
 const debugCheckUrl = "https://sea.dropbox-debug.com/debug-info"
+const debugPopCheckUrl = "dropbox-debug.com/debug-info"
 const downloadSize = 5 * 1024* 1024;
 const downloadSpeedCheckUrl = "https://sea.dropbox-debug.com/download_test/perf_test_5m.data"
 const popCheckUrlPrefix = ".pops.fastly-analytics.com/test_object.svg"
@@ -8,7 +9,6 @@ const headerCheckUrl = "https://sea.dropbox-debug.com/empty"
 
 const pops = [
     'ams',
-    // 'anycast',
     'cdg',
     'dfw',
     'fra',
@@ -25,6 +25,8 @@ const pops = [
     'sin',
     'sjc',
     'syd',
+    'anycast',
+    'default',
 ];
 
 var all_data = {
@@ -34,7 +36,9 @@ var all_data = {
     "speed": {},
     "headers": {},
     "latency": {},
+    "latency-v6": {},
     "dns" : {},
+    "conn_stats": {},
 };
 
 function renderData() {
@@ -85,11 +89,16 @@ function renderData() {
     $("#headers-body").html(headerString);
 
     if (!$.isEmptyObject(all_data["latency"])) {
-        latencyString = '<table class="table table-sm"><thead><tr><th scope="col">POP</th><th scope="col">ms</th></tr></thead><tbody>';
+        latencyString = '<table class="table table-sm"><thead><tr><th scope="col">POP</th><th scope="col">IPv4, ms</th><th scope="col">IPv6, ms</th></tr></thead><tbody>';
         popSorted = Object.keys(all_data["latency"])
-        .sort(function(a,b){return (all_data["latency"][a] || -1) - (all_data["latency"][b] || -1)})
+        .sort(function(a,b){return (all_data["latency"][a]) - (all_data["latency"][b])})
         for (var i in popSorted) {
-            latencyString += '<tr><th scope="row">' + popSorted[i].toUpperCase() + '</th><td>' + all_data["latency"][popSorted[i]] + '</td></th></tr>';
+            v4lat =  all_data["latency"][popSorted[i]] || '-'
+            v6lat =  all_data["latency-v6"][popSorted[i]] || '-' 
+            latencyString += '<tr><th scope="row">' + popSorted[i].toUpperCase() + '</th>\
+            <td>' + v4lat + '</td>\
+            <td>' + v6lat + '</td>\
+            </th></tr>';
         }
         latencyString += '</tbody></table>';
         $("#performance-body").html(latencyString);
@@ -110,7 +119,13 @@ function renderData() {
     }
 
     if (!$.isEmptyObject(all_data["headers"]["x-dropbox-pop"])) {
-        $("#pop-body").html(all_data["headers"]["x-dropbox-pop"].toUpperCase())
+        html = all_data["headers"]["x-dropbox-pop"].toUpperCase()
+        if (!$.isEmptyObject(all_data["conn_stats"]["ip_version"]) && !$.isEmptyObject(all_data["conn_stats"]["server_protocol"])) {
+            ip = all_data['conn_stats']['ip_version']
+            http = all_data['conn_stats']['server_protocol']
+            html += ('(IPv' + ip[3] + ', ' + http + ')')
+        }
+        $("#pop-body").html(html)
         $('#pop').show()
     }
 
@@ -130,10 +145,7 @@ function calculate_performance() {
             all_data["latency"][popName] = Math.round(resourceList[i].responseStart - resourceList[i].requestStart);
             renderData();
         } else if (resourceList[i].name.indexOf(downloadSpeedCheckUrl) != -1) {
-            console.log(resourceList[i])
             downloadTime = (resourceList[i].responseEnd - resourceList[i].fetchStart)/1000; // seconds
-            console.log(downloadTime)
-            console.log(downloadSize / downloadTime /1024/1024)
             all_data["speed"]["download"] = Math.floor(downloadSize / downloadTime / 1024/1024 * 10 ) / 10;
             renderData();
         }
@@ -150,9 +162,6 @@ function loadFromPops() {
     for (i = 0; i < pops.length; i++) {
         images.push('https://'+ pops[i] + popCheckUrlPrefix + uniqPostfix() + '&pop=' + pops[i]);
     }
-
-    // measure download speed 
-    // images.push(downloadSpeedCheckUrl + uniqPostfix())
 
     for ( i = 0; i<images.length; i++) {
         var image = new Image();
@@ -265,7 +274,7 @@ function startRttMeasurements(){
     setInterval(function() {
     $.getJSON( debugCheckUrl, 
     function( data ) {
-        // skip first 10 rtt checks (rtt could be not accurate)
+        // skip first checks (rtt could be not accurate)
         if (i<5) {i++} else {
             if ($.isNumeric(data["tcpinfo_rtt"])) {
                 $("#rtt").html("<b>Live RTT: </b>" + Math.floor(data["tcpinfo_rtt"]/1000) + " ms");
@@ -273,6 +282,16 @@ function startRttMeasurements(){
             }
         }
     })}, 500);
+}
+
+function getConnectionStats(){
+    $.getJSON( debugCheckUrl, function(data){
+        for (var key in data) {
+            if (!data.hasOwnProperty(key)) {continue;}
+            all_data["conn_stats"][key] = data[key];
+        }
+        renderData();
+    })
 }
 
 function collectBroserInfo() {
@@ -291,8 +310,30 @@ function collectBroserInfo() {
     }  
 }
 
+function updatePopLatency(pop) {
+    $.getJSON(
+        "https://" + pop + "." + debugPopCheckUrl,
+        function( data ) {
+            if ($.isNumeric(data["tcpinfo_rtt"])) {
+                all_data["latency"][pop] = Math.floor(data["tcpinfo_rtt"]/1000)
+            }
+        })
+}
+
+function updateV6PopLatency(pop) {
+    $.getJSON(
+        "https://" + pop + "-v6." + debugPopCheckUrl,
+        function( data ) {
+            if ($.isNumeric(data["tcpinfo_rtt"])) {
+                all_data["latency-v6"][pop] = Math.floor(data["tcpinfo_rtt"]/1000)
+            }
+        })
+}
+
+
 function initData() {
     collectBroserInfo()
+    getConnectionStats();
     fetchAllHeaders(headerCheckUrl + uniqPostfix());   
     getGeolocation();
     startRttMeasurements();
@@ -301,6 +342,14 @@ function initData() {
     measureDownloadSpeed();
     measureUploadSpeed();
 
+    pops.forEach(
+        function(pop) {
+            setInterval(function(){ updatePopLatency(pop); }, 1000);
+            setInterval(function(){ updateV6PopLatency(pop); }, 1000);
+
+        }
+    );
 }
 
 initData();
+setInterval(function () { renderData() }, 5000)
