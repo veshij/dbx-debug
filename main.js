@@ -1,11 +1,10 @@
 const uploadSize = 4 * 1024 * 1024;
-const uploadSpeedCheckUrl  ="http://oleg-dbx/upload_blackhole"
-const debugCheckUrl = "http://oleg-dbx/debug-info"
+const uploadSpeedCheckUrl = "https://sea.dropbox-debug.com/upload_test"
+const debugCheckUrl = "https://sea.dropbox-debug.com/debug-info"
 const downloadSize = 5898240;
-const downloadSpeedCheckUrl = "https://www.dropbox.com/static/images/testphoto3.jpg"
-
+const downloadSpeedCheckUrl = "https://sea.dropbox-debug.com/download_test/perf_test_5m.data"
 const popCheckUrlPrefix = ".pops.fastly-analytics.com/test_object.svg"
-const headerCheckUrl = "https://www.dropboxstatic.com/static/images/sprites/web_2x_sprites-vflN8VDFL.png"
+const headerCheckUrl = "https://sea.dropbox-debug.com/empty"
 
 const pops = [
     'ams',
@@ -126,19 +125,17 @@ function calculate_performance() {
     var popNameRe = new RegExp('.*pop=(.*)');
     var resourceList = window.performance.getEntriesByType("resource");
     for (i = 0; i < resourceList.length; i++) {
-        if (resourceList[i].initiatorType == "img") {
-            if (resourceList[i].name.indexOf(popCheckUrlPrefix) != -1) {
-                var popName = popNameRe.exec(resourceList[i].name)[1];
-                all_data["latency"][popName] = Math.round(resourceList[i].responseStart - resourceList[i].requestStart);
-                renderData();
-            } else if (resourceList[i].name.indexOf(downloadSpeedCheckUrl) != -1) {
-                console.log(resourceList[i])
-                downloadTime = (resourceList[i].responseEnd - resourceList[i].fetchStart)/1000; // seconds
-                console.log(downloadTime)
-                console.log(downloadSize / downloadTime /1024/1024)
-                all_data["speed"]["download"] = Math.floor(downloadSize / downloadTime / 1024/1024 * 10 ) / 10;
-                renderData();
-            }
+        if (resourceList[i].name.indexOf(popCheckUrlPrefix) != -1) {
+            var popName = popNameRe.exec(resourceList[i].name)[1];
+            all_data["latency"][popName] = Math.round(resourceList[i].responseStart - resourceList[i].requestStart);
+            renderData();
+        } else if (resourceList[i].name.indexOf(downloadSpeedCheckUrl) != -1) {
+            console.log(resourceList[i])
+            downloadTime = (resourceList[i].responseEnd - resourceList[i].fetchStart)/1000; // seconds
+            console.log(downloadTime)
+            console.log(downloadSize / downloadTime /1024/1024)
+            all_data["speed"]["download"] = Math.floor(downloadSize / downloadTime / 1024/1024 * 10 ) / 10;
+            renderData();
         }
     }
     renderData();
@@ -155,7 +152,7 @@ function loadFromPops() {
     }
 
     // measure download speed 
-    images.push(downloadSpeedCheckUrl + uniqPostfix())
+    // images.push(downloadSpeedCheckUrl + uniqPostfix())
 
     for ( i = 0; i<images.length; i++) {
         var image = new Image();
@@ -205,6 +202,7 @@ function fetchAllHeaders(url) {
         url: url,
         type:'get',
         success:function() {
+            calculate_performance()
             allHeaderString = jqXHR.getAllResponseHeaders();
             headers = parseHeaders(allHeaderString);
             all_data["headers"] = headers;
@@ -232,7 +230,7 @@ function getDNSResults() {
     renderData();
 }
 
-function measureDownloadSpeed() {
+function measureUploadSpeed() {
     $.post(uploadSpeedCheckUrl,
            '0'.repeat(uploadSize),
             function(data) {
@@ -241,13 +239,22 @@ function measureDownloadSpeed() {
     });
 }
 
+function measureDownloadSpeed() {
+    $.get(downloadSpeedCheckUrl + uniqPostfix(),
+            function(data) {
+            calculate_performance();
+        }
+    );
+}
+
+
 function startRttMeasurements(){
     var i = 0;
     setInterval(function() {
     $.getJSON( debugCheckUrl, 
     function( data ) {
         // skip first 10 rtt checks (rtt could be not accurate)
-        if (i<3) {i++} else {
+        if (i<5) {i++} else {
             if ($.isNumeric(data["tcpinfo_rtt"])) {
                 $("#rtt").html("<b>Live RTT: </b>" + Math.floor(data["tcpinfo_rtt"]/1000) + " ms");
                 $('#speed-test').show()
@@ -274,12 +281,13 @@ function collectBroserInfo() {
 
 function initData() {
     collectBroserInfo()
+    fetchAllHeaders(headerCheckUrl + uniqPostfix());   
     getGeolocation();
-    fetchAllHeaders(headerCheckUrl);    
+    startRttMeasurements();
     getDNSResults();
     loadFromPops();
+    measureUploadSpeed();
     measureDownloadSpeed();
-    startRttMeasurements()
 }
 
 
