@@ -26,7 +26,6 @@ const pops = [
     'sjc',
     'syd',
     'anycast',
-    'default',
 ];
 
 var all_data = {
@@ -226,8 +225,8 @@ function fetchAllHeaders(url) {
 
 function getDNSResults() {
     var dnsResponseTypes = {
-        5: "CNAME",
         1: "A",
+        5: "CNAME",
         28: "AAAA",
     }
 
@@ -253,35 +252,23 @@ function getDNSResults() {
 }
 
 function measureUploadSpeed() {
-    $.post(uploadSpeedCheckUrl,
-           '0'.repeat(uploadSize),
-            function(data) {
-                all_data["speed"]["upload"] = Math.floor(uploadSize/parseFloat(data)/ 1024/1024 * 10)/10;
+    $.post(
+        uploadSpeedCheckUrl,
+        '0'.repeat(uploadSize),
+        function(data) {
+            all_data["speed"]["upload"] = Math.floor(uploadSize/parseFloat(data)/ 1024/1024 * 10)/10;
             renderData();
-    });
-}
-
-function measureDownloadSpeed() {
-    $.get(downloadSpeedCheckUrl + uniqPostfix(),
-            function(data) {
-            calculate_performance();
         }
     );
 }
 
-function startRttMeasurements(){
-    var i = 0;
-    setInterval(function() {
-    $.getJSON( debugCheckUrl, 
-    function( data ) {
-        // skip first checks (rtt could be not accurate)
-        if (i<5) {i++} else {
-            if ($.isNumeric(data["tcpinfo_rtt"])) {
-                $("#rtt").html("<b>Live RTT: </b>" + Math.floor(data["tcpinfo_rtt"]/1000) + " ms");
-                $('#speed-test').show()
-            }
+function measureDownloadSpeed() {
+    $.get(
+        downloadSpeedCheckUrl + uniqPostfix(),
+        function(data) {
+            calculate_performance();
         }
-    })}, 500);
+    );
 }
 
 function getConnectionStats(){
@@ -336,7 +323,7 @@ function initData() {
     getConnectionStats();
     fetchAllHeaders(headerCheckUrl + uniqPostfix());   
     getGeolocation();
-    startRttMeasurements();
+    // startRttMeasurements();
     getDNSResults();
     loadFromPops();
     measureDownloadSpeed();
