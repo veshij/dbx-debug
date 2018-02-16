@@ -1,7 +1,7 @@
 const uploadSize = 4 * 1024 * 1024;
 const uploadSpeedCheckUrl = "https://sea.dropbox-debug.com/upload_test"
 const debugCheckUrl = "https://sea.dropbox-debug.com/debug-info"
-const downloadSize = 5898240;
+const downloadSize = 5 * 1024* 1024;
 const downloadSpeedCheckUrl = "https://sea.dropbox-debug.com/download_test/perf_test_5m.data"
 const popCheckUrlPrefix = ".pops.fastly-analytics.com/test_object.svg"
 const headerCheckUrl = "https://sea.dropbox-debug.com/empty"
@@ -202,7 +202,6 @@ function fetchAllHeaders(url) {
         url: url,
         type:'get',
         success:function() {
-            calculate_performance()
             allHeaderString = jqXHR.getAllResponseHeaders();
             headers = parseHeaders(allHeaderString);
             all_data["headers"] = headers;
@@ -217,14 +216,28 @@ function fetchAllHeaders(url) {
 }
 
 function getDNSResults() {
+    var dnsResponseTypes = {
+        5: "CNAME",
+        1: "A",
+        28: "AAAA",
+    }
+
     $.getJSON('https://dns.google.com/resolve?name=www.dropbox.com&type=A', function(data) {
-        var str = JSON.stringify(data, null, 2); // spacing level = 2
-        all_data["dns"]["A Query"] = str;
+        var html = '<p>'
+        for ( var i in data["Answer"]) {
+            html += data["Answer"][i]["name"] + "&#9;" + dnsResponseTypes[data["Answer"][i]["type"]] + "&#9;" + data["Answer"][i]["data"] + "<br/>"
+        }
+        html += "</p>"
+        all_data["dns"]["A Query"] = html;
     });
 
     $.getJSON('https://dns.google.com/resolve?name=www.dropbox.com&type=AAAA', function(data) {
-        var str = JSON.stringify(data, null, 2); // spacing level = 2
-        all_data["dns"]["AAAA Query"] = str;
+        var html = '<p>'
+        for ( var i in data["Answer"]) {
+            html += data["Answer"][i]["name"] + "&#9;" + dnsResponseTypes[data["Answer"][i]["type"]] + "&#9;" + data["Answer"][i]["data"] + "<br/>"
+        }
+        html += "</p>"
+        all_data["dns"]["AAAA Query"] = html;
     });
 
     renderData();
@@ -246,7 +259,6 @@ function measureDownloadSpeed() {
         }
     );
 }
-
 
 function startRttMeasurements(){
     var i = 0;
@@ -286,10 +298,9 @@ function initData() {
     startRttMeasurements();
     getDNSResults();
     loadFromPops();
-    measureUploadSpeed();
     measureDownloadSpeed();
+    measureUploadSpeed();
+
 }
-
-
 
 initData();
